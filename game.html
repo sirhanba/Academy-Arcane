@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arcane Academy</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #150b2e;
+    --bg2: #1f1245;
+    --gold: #e8c15a;
+    --purple: #7d4fd6;
+    --purple-light: #a687f0;
+    --text: #f2ecff;
+    --green: #4caf7d;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: radial-gradient(circle at top, var(--bg2), var(--bg));
+    color: var(--text);
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin: 8px 0 0;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--purple-light);
+    margin-top: -8px;
+  }
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(232,193,90,0.25);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .name-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .name-row input {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--purple);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 1rem;
+  }
+  .name-row button {
+    background: var(--purple);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 6px 0;
+    font-size: 0.95rem;
+  }
+  .bar-outer {
+    background: rgba(0,0,0,0.35);
+    border-radius: 6px;
+    height: 10px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--purple-light));
+    transition: width 0.3s ease;
+  }
+  .bar-inner.mana { background: linear-gradient(90deg, #3a7bd5, #5aa8f0); }
+  .currencies {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .currency {
+    flex: 1;
+    text-align: center;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    padding: 10px 6px;
+  }
+  .currency .val {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--gold);
+  }
+  .currency .lbl {
+    font-size: 0.75rem;
+    color: var(--purple-light);
+  }
+  .cast-btn {
+    width: 100%;
+    padding: 18px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--purple), #4b2a99);
+    color: white;
+    box-shadow: 0 4px 14px rgba(125,79,214,0.5);
+    active-opacity: 0.8;
+  }
+  .cast-btn:active { transform: scale(0.97); }
+  .log {
+    font-size: 0.8rem;
+    color: var(--purple-light);
+    min-height: 18px;
+    text-align: center;
+  }
+  .hint {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+    line-height: 1.4;
+  }
+  .inv-title {
+    font-size: 0.95rem;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+  .inv-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .inv-slot {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 8px 4px;
+    text-align: center;
+    position: relative;
+  }
+  .inv-slot.empty { opacity: 0.35; }
+  .inv-slot .icon { font-size: 1.4rem; display: block; }
+  .inv-slot .count {
+    position: absolute;
+    bottom: 2px;
+    right: 6px;
+    font-size: 0.65rem;
+    color: var(--gold);
+    font-weight: bold;
+  }
+  .inv-slot .iname {
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.6);
+    display: block;
+    margin-top: 2px;
+  }
+  .rarity-comum { border-color: rgba(255,255,255,0.15); }
+  .rarity-raro { border-color: rgba(90,168,240,0.5); }
+  .rarity-epico { border-color: rgba(232,193,90,0.6); }
+  .upgrade-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .upgrade-row:last-child { border-bottom: none; }
+  .upgrade-icon { font-size: 1.4rem; width: 30px; text-align: center; }
+  .upgrade-info { flex: 1; }
+  .upgrade-info .uname { font-size: 0.9rem; font-weight: bold; }
+  .upgrade-info .udesc { font-size: 0.72rem; color: rgba(255,255,255,0.5); }
+  .upgrade-info .ulvl { font-size: 0.7rem; color: var(--purple-light); }
+  .upgrade-buy {
+    background: var(--purple);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    min-width: 68px;
+  }
+  .upgrade-buy.essence-cost { background: linear-gradient(135deg, #c9962f, #e8c15a); color: #2a1a00; }
+  .upgrade-buy:disabled { opacity: 0.35; }
+  .creation-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .nick-row {
+    display: flex;
+    gap: 8px;
+  }
+  .nick-row input {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--purple);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 1rem;
+  }
+  .nick-row button {
+    background: var(--purple);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+  .nick-status { font-size: 0.8rem; min-height: 18px; }
+  .nick-status.ok { color: var(--green); }
+  .nick-status.bad { color: #e5615a; }
+  .avatar-box {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+  }
+  .gender-row {
+    display: flex;
+    gap: 10px;
+  }
+  .gender-btn {
+    flex: 1;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 12px;
+    border: 2px solid var(--purple);
+    background: rgba(255,255,255,0.03);
+    color: var(--text);
+  }
+  .gender-btn.active {
+    background: var(--purple);
+    border-color: var(--purple-light);
+  }
+  .preset-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .arrow-btn {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: var(--text);
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+  }
+  .preset-label {
+    font-size: 0.85rem;
+    color: var(--purple-light);
+    min-width: 120px;
+    text-align: center;
+  }
+  .confirm-btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.05rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--gold), #c9962f);
+    color: #2a1a00;
+  }
+  .confirm-btn:disabled { opacity: 0.4; }
+  .hidden { display: none !important; }
+  .house-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .house-card {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: rgba(255,255,255,0.03);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: left;
+  }
+  .house-card.selected {
+    border-color: var(--gold);
+    background: rgba(232,193,90,0.08);
+  }
+  .house-icon { font-size: 1.8rem; line-height: 1; }
+  .house-info .hname { font-weight: bold; font-size: 1rem; }
+  .house-info .hdesc { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+  .house-info .hbuff { font-size: 0.72rem; color: var(--gold); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TELA DE CRIAÇÃO DE PERSONAGEM -->
+  <div class="creation-screen" id="creationScreen">
+    <h1>✨ Arcane Academy ✨</h1>
+    <div class="subtitle">Crie seu personagem</div>
+
+    <div class="card">
+      <div class="nick-row">
+        <input id="nickInput" type="text" placeholder="Escolha seu nickname" maxlength="16">
+        <button onclick="checkNickname()">Verificar</button>
+      </div>
+      <div class="nick-status" id="nickStatus"></div>
+    </div>
+
+    <div class="card">
+      <div class="avatar-box">
+        <svg id="avatarSvg" width="140" height="180" viewBox="0 0 140 180"></svg>
+      </div>
+
+      <div class="gender-row">
+        <button class="gender-btn" id="genderF" onclick="selectGender('f')">♀ Feminino</button>
+        <button class="gender-btn" id="genderM" onclick="selectGender('m')">♂ Masculino</button>
+      </div>
+
+      <div class="preset-row" style="margin-top:16px;">
+        <button class="arrow-btn" onclick="cyclePreset(-1)">‹</button>
+        <div class="preset-label" id="presetLabel">Visual 1</div>
+        <button class="arrow-btn" onclick="cyclePreset(1)">›</button>
+      </div>
+    </div>
+
+    <button class="confirm-btn" id="confirmBtn" onclick="confirmCharacter()" disabled>Confirmar</button>
+    <div class="hint">
+      Verificação de nickname é simulada neste protótipo (sem servidor ainda).<br>
+      <a href="#" onclick="resetProgress(); return false;" style="color:#e5615a;">🔄 Resetar progresso (teste)</a>
+    </div>
+  </div>
+
+  <!-- TELA DE SELEÇÃO DE CASA -->
+  <div class="hidden creation-screen" id="houseScreen">
+    <h1>✨ Arcane Academy ✨</h1>
+    <div class="subtitle">Escolha sua casa</div>
+
+    <div class="house-grid" id="houseGrid"></div>
+
+    <button class="confirm-btn" id="confirmHouseBtn" onclick="confirmHouse()" disabled>Confirmar Casa</button>
+    <div class="hint">Cada casa dá um bônus permanente e vai definir a árvore de habilidades futura.</div>
+  </div>
+
+  <!-- APP PRINCIPAL DO JOGO -->
+  <div class="hidden" id="mainApp">
+    <h1>✨ Arcane Academy ✨</h1>
+    <div class="subtitle" id="playerTagline">Protótipo v0.1 — clicker de treino mágico</div>
+
+    <div class="card">
+      <div class="stat-row">
+        <span>Nível <b id="levelVal">1</b></span>
+        <span id="xpText">0 / 50 XP</span>
+      </div>
+      <div class="bar-outer"><div class="bar-inner" id="xpBar" style="width:0%"></div></div>
+
+      <div class="stat-row" style="margin-top:12px;">
+        <span>Mana</span>
+        <span id="manaText">10 / 10</span>
+      </div>
+      <div class="bar-outer"><div class="bar-inner mana" id="manaBar" style="width:100%"></div></div>
+    </div>
+
+    <div class="currencies">
+      <div class="currency">
+        <div class="val" id="goldVal">0</div>
+        <div class="lbl">🪙 Moedas de Cobre</div>
+      </div>
+      <div class="currency">
+        <div class="val" id="essenceVal">0</div>
+        <div class="lbl">💎 Essência Arcana</div>
+      </div>
+    </div>
+
+    <button class="cast-btn" id="castBtn" onclick="cast()">🔮 Conjurar Feitiço</button>
+    <div class="log" id="log"></div>
+
+    <div class="card">
+      <div class="inv-title">🎒 Mochila</div>
+      <div class="inv-grid" id="invGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="inv-title">🛒 Loja de Upgrades</div>
+      <div id="upgradeList"></div>
+    </div>
+
+    <div class="hint">
+      Protótipo local — o progresso fica salvo neste navegador/dispositivo.<br>
+      Essência Arcana ainda não é comprável; será a moeda premium (via Pix) na versão final.<br>
+      <a href="#" onclick="resetProgress(); return false;" style="color:#e5615a;">🔄 Resetar progresso (teste)</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- Integração básica com o Telegram Web App ---
+  let tg = window.Telegram ? window.Telegram.WebApp : null;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    document.body.style.background = tg.themeParams.bg_color || "";
+  }
+
+  // --- Estado do jogo (salvo no localStorage por enquanto) ---
+  const STORAGE_KEY = "academia_arcana_save";
+
+  const ITEMS = [
+    { id: "erva_lunar",    name: "Erva Lunar",     icon: "🌿", rarity: "comum", weight: 50 },
+    { id: "po_estelar",    name: "Pó Estelar",     icon: "✨", rarity: "comum", weight: 30 },
+    { id: "cristal_arcano",name: "Cristal Arcano", icon: "🔹", rarity: "raro",  weight: 15 },
+    { id: "pena_fenix",    name: "Pena de Fênix",  icon: "🪶", rarity: "epico", weight: 5  }
+  ];
+  const DROP_CHANCE = 0.3; // 30% de chance de achar item ao conjurar
+
+  const UPGRADES = [
+    {
+      id: "power",
+      name: "Cajado Aprimorado",
+      icon: "🪄",
+      desc: "+20% de XP e Moedas por conjuração",
+      currency: "gold",
+      baseCost: 20,
+      growth: 1.6
+    },
+    {
+      id: "mana",
+      name: "Reservatório de Mana",
+      icon: "🔷",
+      desc: "+5 de mana máxima",
+      currency: "gold",
+      baseCost: 15,
+      growth: 1.5
+    },
+    {
+      id: "luck",
+      name: "Sorte Arcana",
+      icon: "🍀",
+      desc: "+5% de chance de achar item",
+      currency: "essence",
+      baseCost: 3,
+      growth: 1.4
+    },
+    {
+      id: "regen",
+      name: "Grimório Veloz",
+      icon: "📖",
+      desc: "-1s no tempo de regenerar mana",
+      currency: "essence",
+      baseCost: 4,
+      growth: 1.5
+    }
+  ];
+
+  function upgradeCost(def) {
+    const lvl = state.upgrades[def.id] || 0;
+    return Math.ceil(def.baseCost * Math.pow(def.growth, lvl));
+  }
+
+  function buyUpgrade(id) {
+    const def = UPGRADES.find(u => u.id === id);
+    if (!def) return;
+    const cost = upgradeCost(def);
+    const wallet = def.currency === "gold" ? "gold" : "essence";
+
+    if (state[wallet] < cost) {
+      log("Recursos insuficientes para " + def.name + ".");
+      return;
+    }
+
+    state[wallet] -= cost;
+    state.upgrades[id] = (state.upgrades[id] || 0) + 1;
+
+    if (id === "mana") {
+      state.manaMax += 5;
+      state.mana += 5;
+    }
+
+    log("Upgrade comprado: " + def.name + " (nível " + state.upgrades[id] + ")");
+    saveState();
+    render();
+  }
+
+  function defaultState() {
+    return {
+      name: "",
+      characterCreated: false,
+      house: null,
+      gender: "f",
+      presetIndex: 0,
+      level: 1,
+      xp: 0,
+      xpToNext: 50,
+      mana: 10,
+      manaMax: 10,
+      gold: 0,
+      essence: 0,
+      inventory: {},
+      upgrades: { power: 0, mana: 0, luck: 0, regen: 0 }
+    };
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const loaded = raw ? JSON.parse(raw) : defaultState();
+      if (!loaded.inventory) loaded.inventory = {};
+      if (!loaded.upgrades) loaded.upgrades = { power: 0, mana: 0, luck: 0, regen: 0 };
+      if (loaded.characterCreated === undefined) loaded.characterCreated = false;
+      if (loaded.house === undefined) loaded.house = null;
+      if (!loaded.gender) loaded.gender = "f";
+      if (loaded.presetIndex === undefined) loaded.presetIndex = 0;
+      return loaded;
+    } catch (e) {
+      return defaultState();
+    }
+  }
+
+  function rollItemDrop(luckBonus) {
+    luckBonus = luckBonus || 0;
+    if (Math.random() > (DROP_CHANCE + luckBonus)) return null;
+    const totalWeight = ITEMS.reduce((sum, it) => sum + it.weight, 0);
+    let roll = Math.random() * totalWeight;
+    for (const item of ITEMS) {
+      if (roll < item.weight) return item;
+      roll -= item.weight;
+    }
+    return ITEMS[0];
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* ignora se storage falhar */ }
+  }
+
+  let state = loadState();
+
+  function render() {
+    const houseObj = HOUSES.find(h => h.id === state.house);
+    const tagline = document.getElementById("playerTagline");
+    tagline.textContent =
+      (state.name || "Aprendiz") + " · " + (state.gender === "f" ? "Feminino" : "Masculino") +
+      (houseObj ? " · " + houseObj.icon + " " + houseObj.name : "");
+    tagline.style.color = houseObj ? houseObj.color : "";
+    document.getElementById("levelVal").textContent = state.level;
+    document.getElementById("xpText").textContent = state.xp + " / " + state.xpToNext + " XP";
+    document.getElementById("xpBar").style.width = Math.min(100, (state.xp / state.xpToNext) * 100) + "%";
+    document.getElementById("manaText").textContent = state.mana + " / " + state.manaMax;
+    document.getElementById("manaBar").style.width = (state.mana / state.manaMax) * 100 + "%";
+    document.getElementById("goldVal").textContent = state.gold;
+    document.getElementById("essenceVal").textContent = state.essence;
+
+    const btn = document.getElementById("castBtn");
+    btn.disabled = state.mana <= 0;
+    btn.style.opacity = state.mana <= 0 ? "0.5" : "1";
+
+    renderInventory();
+    renderUpgrades();
+  }
+
+  function renderUpgrades() {
+    const list = document.getElementById("upgradeList");
+    list.innerHTML = "";
+    UPGRADES.forEach(def => {
+      const lvl = state.upgrades[def.id] || 0;
+      const cost = upgradeCost(def);
+      const wallet = def.currency === "gold" ? state.gold : state.essence;
+      const canAfford = wallet >= cost;
+      const costIcon = def.currency === "gold" ? "🪙" : "💎";
+
+      const row = document.createElement("div");
+      row.className = "upgrade-row";
+      row.innerHTML =
+        '<span class="upgrade-icon">' + def.icon + '</span>' +
+        '<div class="upgrade-info">' +
+          '<div class="uname">' + def.name + ' <span class="ulvl">nível ' + lvl + '</span></div>' +
+          '<div class="udesc">' + def.desc + '</div>' +
+        '</div>' +
+        '<button class="upgrade-buy' + (def.currency === "essence" ? " essence-cost" : "") + '" ' +
+          (canAfford ? "" : "disabled") + ' onclick="buyUpgrade(\'' + def.id + '\')">' +
+          costIcon + ' ' + cost +
+        '</button>';
+      list.appendChild(row);
+    });
+  }
+
+  function renderInventory() {
+    const grid = document.getElementById("invGrid");
+    grid.innerHTML = "";
+    ITEMS.forEach(item => {
+      const count = state.inventory[item.id] || 0;
+      const slot = document.createElement("div");
+      slot.className = "inv-slot rarity-" + item.rarity + (count === 0 ? " empty" : "");
+      slot.innerHTML =
+        '<span class="icon">' + item.icon + '</span>' +
+        '<span class="iname">' + item.name + '</span>' +
+        (count > 0 ? '<span class="count">x' + count + '</span>' : '');
+      grid.appendChild(slot);
+    });
+  }
+
+  // ---------- CRIAÇÃO DE PERSONAGEM ----------
+
+  // Lista simulada de nicknames já usados (sem servidor real ainda)
+  const RESERVED_NICKS = ["admin", "teste", "moderador", "arcaneacademy"];
+
+  const PRESETS = [
+    { label: "Visual 1", hair: "#7d4fd6", face: "#f2c9a0", hairShape: "wave" },
+    { label: "Visual 2", hair: "#e8c15a", face: "#e0a87a", hairShape: "spiky" },
+    { label: "Visual 3", hair: "#3a3a3a", face: "#f6d9b8", hairShape: "long" },
+    { label: "Visual 4", hair: "#a63b3b", face: "#c98a5c", hairShape: "bob" }
+  ];
+
+  let nickAvailable = false;
+
+  function checkNickname() {
+    const val = document.getElementById("nickInput").value.trim();
+    const statusEl = document.getElementById("nickStatus");
+
+    if (val.length < 3 || val.length > 16) {
+      statusEl.textContent = "O nickname deve ter entre 3 e 16 caracteres.";
+      statusEl.className = "nick-status bad";
+      nickAvailable = false;
+    } else if (!/^[a-zA-Z0-9_]+$/.test(val)) {
+      statusEl.textContent = "Use apenas letras, números e _ (sem espaços).";
+      statusEl.className = "nick-status bad";
+      nickAvailable = false;
+    } else if (RESERVED_NICKS.includes(val.toLowerCase())) {
+      statusEl.textContent = "Esse nickname já está em uso.";
+      statusEl.className = "nick-status bad";
+      nickAvailable = false;
+    } else {
+      statusEl.textContent = "✓ Nickname disponível (verificação local — sem servidor ainda)";
+      statusEl.className = "nick-status ok";
+      nickAvailable = true;
+      state.name = val;
+    }
+    updateConfirmButton();
+  }
+
+  function selectGender(g) {
+    state.gender = g;
+    document.getElementById("genderF").classList.toggle("active", g === "f");
+    document.getElementById("genderM").classList.toggle("active", g === "m");
+    renderAvatar();
+    updateConfirmButton();
+  }
+
+  function cyclePreset(dir) {
+    state.presetIndex = (state.presetIndex + dir + PRESETS.length) % PRESETS.length;
+    renderAvatar();
+  }
+
+  function renderAvatar() {
+    const preset = PRESETS[state.presetIndex];
+    document.getElementById("presetLabel").textContent = preset.label;
+
+    const robeColor = state.gender === "f" ? "#7d4fd6" : "#2f4d8a";
+    const robeShape = state.gender === "f"
+      ? "M35,180 L30,100 Q70,80 110,100 L105,180 Z"
+      : "M38,180 L34,100 Q70,88 106,100 L102,180 Z";
+
+    let hairPath = "";
+    if (preset.hairShape === "wave") {
+      hairPath = "M35,70 Q70,30 105,70 Q100,50 70,45 Q40,50 35,70 Z";
+    } else if (preset.hairShape === "spiky") {
+      hairPath = "M32,72 L45,35 L55,60 L70,30 L85,60 L95,35 L108,72 Z";
+    } else if (preset.hairShape === "long") {
+      hairPath = "M33,70 Q70,25 107,70 L112,150 L98,150 L95,75 L45,75 L42,150 L28,150 Z";
+    } else {
+      hairPath = "M34,72 Q70,32 106,72 Q108,90 95,95 Q70,80 45,95 Q32,90 34,72 Z";
+    }
+
+    const svg =
+      '<circle cx="70" cy="70" r="32" fill="' + preset.face + '" />' +
+      '<path d="' + robeShape + '" fill="' + robeColor + '" />' +
+      '<circle cx="58" cy="68" r="3.5" fill="#2a1a3d" />' +
+      '<circle cx="82" cy="68" r="3.5" fill="#2a1a3d" />' +
+      '<path d="M60,85 Q70,92 80,85" stroke="#5a3a1a" stroke-width="2" fill="none" />' +
+      '<path d="' + hairPath + '" fill="' + preset.hair + '" />';
+
+    document.getElementById("avatarSvg").innerHTML = svg;
+  }
+
+  const HOUSES = [
+    {
+      id: "vaelunna",
+      name: "Vaelunna",
+      icon: "🐺",
+      color: "#e8c15a",
+      desc: "Uivam sob a lua cheia, movidos por instinto, lealdade de matilha e fúria no ataque.",
+      buff: "+15% XP e Moedas por conjuração",
+      statKey: "power",
+      statValue: 0.15
+    },
+    {
+      id: "noctivia",
+      name: "Noctivia",
+      icon: "🦉",
+      color: "#4caf7d",
+      desc: "Guardiões do saber noturno, enxergam o que os outros não veem e guardam reservas profundas de magia.",
+      buff: "+10 Mana máxima e regeneração mais rápida",
+      statKey: "mana",
+      statValue: 10
+    },
+    {
+      id: "sibyra",
+      name: "Sibyra",
+      icon: "🐍",
+      color: "#c0453f",
+      desc: "Astutos e traiçoeiros, atacam apenas no instante perfeito — e a sorte nunca os abandona.",
+      buff: "+10% de chance de encontrar itens",
+      statKey: "luck",
+      statValue: 0.10
+    },
+    {
+      id: "cervanthus",
+      name: "Cervanthus",
+      icon: "🦌",
+      color: "#4a7bc7",
+      desc: "Fortes e resilientes, avançam com passos firmes e imponentes, sempre bem providos.",
+      buff: "+20% Moedas de Cobre por conjuração",
+      statKey: "gold",
+      statValue: 0.20
+    }
+  ];
+
+  function renderHouseScreen() {
+    const grid = document.getElementById("houseGrid");
+    grid.innerHTML = "";
+    HOUSES.forEach(h => {
+      const isSelected = state.house === h.id;
+      const card = document.createElement("div");
+      card.className = "house-card" + (isSelected ? " selected" : "");
+      card.style.borderColor = isSelected ? h.color : "rgba(255,255,255,0.1)";
+      card.style.background = isSelected ? h.color + "18" : "rgba(255,255,255,0.03)";
+      card.onclick = () => selectHouse(h.id);
+      card.innerHTML =
+        '<div class="house-icon">' + h.icon + '</div>' +
+        '<div class="house-info">' +
+          '<div class="hname" style="color:' + h.color + '">' + h.name + '</div>' +
+          '<div class="hdesc">' + h.desc + '</div>' +
+          '<div class="hbuff">' + h.buff + '</div>' +
+        '</div>';
+      grid.appendChild(card);
+    });
+  }
+
+  function selectHouse(id) {
+    state.house = id;
+    renderHouseScreen();
+    document.getElementById("confirmHouseBtn").disabled = false;
+  }
+
+  function confirmHouse() {
+    if (!state.house) return;
+    const h = HOUSES.find(x => x.id === state.house);
+    if (h && h.statKey === "mana") {
+      state.manaMax += h.statValue;
+      state.mana += h.statValue;
+    }
+    saveState();
+    document.getElementById("houseScreen").classList.add("hidden");
+    document.getElementById("mainApp").classList.remove("hidden");
+    render();
+  }
+
+  function houseBonusMultiplier(statKey) {
+    const h = HOUSES.find(x => x.id === state.house);
+    if (h && h.statKey === statKey) return h.statValue;
+    return 0;
+  }
+
+  function updateConfirmButton() {
+    document.getElementById("confirmBtn").disabled = !nickAvailable;
+  }
+
+  function confirmCharacter() {
+    if (!nickAvailable) return;
+    state.characterCreated = true;
+    saveState();
+    document.getElementById("creationScreen").classList.add("hidden");
+    document.getElementById("houseScreen").classList.remove("hidden");
+    renderHouseScreen();
+  }
+
+  function initScreen() {
+    if (state.characterCreated && state.house) {
+      document.getElementById("creationScreen").classList.add("hidden");
+      document.getElementById("houseScreen").classList.add("hidden");
+      document.getElementById("mainApp").classList.remove("hidden");
+    } else if (state.characterCreated && !state.house) {
+      document.getElementById("creationScreen").classList.add("hidden");
+      document.getElementById("houseScreen").classList.remove("hidden");
+      renderHouseScreen();
+    } else {
+      document.getElementById("genderF").classList.toggle("active", state.gender === "f");
+      document.getElementById("genderM").classList.toggle("active", state.gender === "m");
+      renderAvatar();
+    }
+  }
+
+  function resetProgress() {
+    if (confirm("Isso vai apagar todo o progresso salvo neste dispositivo. Continuar?")) {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+  }
+
+  function log(msg) {
+    document.getElementById("log").textContent = msg;
+  }
+
+  function cast() {
+    if (state.mana <= 0) {
+      log("Sem mana! Aguarde regenerar (protótipo: clique em 'Descansar').");
+      return;
+    }
+    state.mana -= 1;
+    const powerMult = 1 + (state.upgrades.power || 0) * 0.2 + houseBonusMultiplier("power");
+    const goldMult = 1 + houseBonusMultiplier("gold");
+    const xpGain = Math.round((5 + Math.floor(Math.random() * 6)) * powerMult);
+    const goldGain = Math.round((1 + Math.floor(Math.random() * 3)) * powerMult * goldMult);
+    state.xp += xpGain;
+    state.gold += goldGain;
+
+    let msg = "+" + xpGain + " XP, +" + goldGain + " moedas";
+
+    const luckBonus = (state.upgrades.luck || 0) * 0.05 + houseBonusMultiplier("luck");
+    const droppedItem = rollItemDrop(luckBonus);
+    if (droppedItem) {
+      state.inventory[droppedItem.id] = (state.inventory[droppedItem.id] || 0) + 1;
+      msg += " — encontrou " + droppedItem.icon + " " + droppedItem.name + "!";
+    }
+
+    if (state.xp >= state.xpToNext) {
+      state.xp -= state.xpToNext;
+      state.level += 1;
+      state.xpToNext = Math.round(state.xpToNext * 1.25);
+      state.manaMax += 2;
+      state.mana = state.manaMax;
+      state.essence += 1; // recompensa de nível: essência arcana
+      msg += " — 🎉 Subiu para o nível " + state.level + "! (+1 Essência Arcana)";
+    }
+
+    log(msg);
+    saveState();
+    render();
+
+    if (tg && tg.HapticFeedback) {
+      tg.HapticFeedback.impactOccurred("light");
+    }
+  }
+
+  // Regeneração de mana — intervalo dinâmico (afetado pelo upgrade "regen")
+  const BASE_REGEN_MS = 10000;
+  const MIN_REGEN_MS = 3000;
+  let regenAccumulator = 0;
+
+  setInterval(() => {
+    regenAccumulator += 1000;
+    const regenLevel = state.upgrades.regen || 0;
+    const houseRegenBonus = state.house === "noctivia" ? 2000 : 0;
+    const currentInterval = Math.max(MIN_REGEN_MS, BASE_REGEN_MS - regenLevel * 1000 - houseRegenBonus);
+    if (regenAccumulator >= currentInterval) {
+      regenAccumulator = 0;
+      if (state.mana < state.manaMax) {
+        state.mana += 1;
+        saveState();
+        render();
+      }
+    }
+  }, 1000);
+
+  initScreen();
+  if (state.characterCreated && state.house) render();
+</script>
+</body>
+</html>
