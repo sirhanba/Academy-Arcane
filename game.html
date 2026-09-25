@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arcane Academy</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #150b2e;
+    --bg2: #1f1245;
+    --gold: #e8c15a;
+    --purple: #7d4fd6;
+    --purple-light: #a687f0;
+    --text: #f2ecff;
+    --green: #4caf7d;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: radial-gradient(circle at top, var(--bg2), var(--bg));
+    color: var(--text);
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin: 8px 0 0;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--purple-light);
+    margin-top: -8px;
+  }
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(232,193,90,0.25);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .name-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .name-row input {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--purple);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 1rem;
+  }
+  .name-row button {
+    background: var(--purple);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 6px 0;
+    font-size: 0.95rem;
+  }
+  .bar-outer {
+    background: rgba(0,0,0,0.35);
+    border-radius: 6px;
+    height: 10px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--purple-light));
+    transition: width 0.3s ease;
+  }
+  .bar-inner.mana { background: linear-gradient(90deg, #3a7bd5, #5aa8f0); }
+  .currencies {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .currency {
+    flex: 1;
+    text-align: center;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    padding: 10px 6px;
+  }
+  .currency .val {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--gold);
+  }
+  .currency .lbl {
+    font-size: 0.75rem;
+    color: var(--purple-light);
+  }
+  .cast-btn {
+    width: 100%;
+    padding: 18px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--purple), #4b2a99);
+    color: white;
+    box-shadow: 0 4px 14px rgba(125,79,214,0.5);
+    active-opacity: 0.8;
+  }
+  .cast-btn:active { transform: scale(0.97); }
+  .log {
+    font-size: 0.8rem;
+    color: var(--purple-light);
+    min-height: 18px;
+    text-align: center;
+  }
+  .hint {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+    line-height: 1.4;
+  }
+  .inv-title {
+    font-size: 0.95rem;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+  .inv-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .inv-slot {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 8px 4px;
+    text-align: center;
+    position: relative;
+  }
+  .inv-slot.empty { opacity: 0.35; }
+  .inv-slot .icon { font-size: 1.4rem; display: block; }
+  .inv-slot .count {
+    position: absolute;
+    bottom: 2px;
+    right: 6px;
+    font-size: 0.65rem;
+    color: var(--gold);
+    font-weight: bold;
+  }
+  .inv-slot .iname {
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.6);
+    display: block;
+    margin-top: 2px;
+  }
+  .rarity-comum { border-color: rgba(255,255,255,0.15); }
+  .rarity-raro { border-color: rgba(90,168,240,0.5); }
+  .rarity-epico { border-color: rgba(232,193,90,0.6); }
+  .upgrade-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .upgrade-row:last-child { border-bottom: none; }
+  .upgrade-icon { font-size: 1.4rem; width: 30px; text-align: center; }
+  .upgrade-info { flex: 1; }
+  .upgrade-info .uname { font-size: 0.9rem; font-weight: bold; }
+  .upgrade-info .udesc { font-size: 0.72rem; color: rgba(255,255,255,0.5); }
+  .upgrade-info .ulvl { font-size: 0.7rem; color: var(--purple-light); }
+  .upgrade-buy {
+    background: var(--purple);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    min-width: 68px;
+  }
+  .upgrade-buy.essence-cost { background: linear-gradient(135deg, #c9962f, #e8c15a); color: #2a1a00; }
+  .upgrade-buy:disabled { opacity: 0.35; }
+  .creation-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .nick-row {
+    display: flex;
+    gap: 8px;
+  }
+  .nick-row input {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--purple);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 1rem;
+  }
+  .nick-row button {
+    background: var(--purple);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+  .nick-status { font-size: 0.8rem; min-height: 18px; }
+  .nick-status.ok { color: var(--green); }
+  .nick-status.bad { color: #e5615a; }
+  .avatar-box {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+  }
+  .gender-row {
+    display: flex;
+    gap: 10px;
+  }
+  .gender-btn {
+    flex: 1;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 12px;
+    border: 2px solid var(--purple);
+    background: rgba(255,255,255,0.03);
+    color: var(--text);
+  }
+  .gender-btn.active {
+    background: var(--purple);
+    border-color: var(--purple-light);
+  }
+  .preset-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .arrow-btn {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: var(--text);
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+  }
+  .preset-label {
+    font-size: 0.85rem;
+    color: var(--purple-light);
+    min-width: 120px;
+    text-align: center;
+  }
+  .confirm-btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.05rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--gold), #c9962f);
+    color: #2a1a00;
+  }
+  .confirm-btn:disabled { opacity: 0.4; }
+  .hidden { display: none !important; }
+  .house-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .house-card {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: rgba(255,255,255,0.03);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: left;
+  }
+  .house-card.selected {
+    border-color: var(--gold);
+    background: rgba(232,193,90,0.08);
+  }
+  .house-icon { font-size: 1.8rem; line-height: 1; }
+  .house-info .hname { font-weight: bold; font-size: 1rem; }
+  .house-info .hdesc { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+  .house-info .hbuff { font-size: 0.72rem; color: var(--gold); margin-top: 4px; }
+  .top-nav {
+    display: flex;
+    gap: 8px;
+  }
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 10px 4px;
+    color: var(--text);
+  }
+  .nav-btn:active { background: rgba(255,255,255,0.1); }
+  .nav-btn .nav-icon { font-size: 1.5rem; line-height: 1; }
+  .nav-btn .nav-label { font-size: 0.65rem; color: rgba(255,255,255,0.7); }
+  .hp-bar .bar-inner { background: linear-gradient(90deg, #b03a3a, #e05a5a); }
+  .zone-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(232,193,90,0.2);
+    border-radius: 14px;
+    padding: 14px;
+  }
+  .zone-title { font-size: 1.05rem; color: var(--gold); margin-bottom: 4px; }
+  .zone-desc { font-size: 0.78rem; color: rgba(255,255,255,0.55); margin-bottom: 12px; }
+  .zone-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .zone-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 12px 6px;
+    color: var(--text);
+    font-size: 0.8rem;
+  }
+  .zone-btn:disabled { opacity: 0.4; }
+  .monster-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .monster-card.locked { opacity: 0.5; }
+  .monster-icon { font-size: 2rem; width: 46px; text-align: center; }
+  .monster-info { flex: 1; }
+  .monster-info .mname { font-weight: bold; font-size: 0.95rem; }
+  .monster-info .mlevel { font-size: 0.7rem; color: var(--gold); margin-left: 6px; }
+  .monster-info .mstats { font-size: 0.72rem; color: rgba(255,255,255,0.55); margin-top: 2px; }
+  .monster-fight-btn {
+    background: var(--purple);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  .monster-fight-btn:disabled { opacity: 0.4; background: rgba(255,255,255,0.1); }
+  .map-viewport {
+    position: relative;
+    width: 100%;
+    height: 380px;
+    overflow: hidden;
+    border-radius: 14px;
+    background: radial-gradient(circle at 30% 20%, #1f1245, #0d0620);
+    border: 1px solid rgba(232,193,90,0.2);
+    touch-action: none;
+    user-select: none;
+  }
+  .map-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1000px;
+    height: 700px;
+    transform-origin: 0 0;
+  }
+  .map-edges { position: absolute; top: 0; left: 0; pointer-events: none; }
+  .map-node {
+    position: absolute;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    background: rgba(255,255,255,0.06);
+    border: 2px solid rgba(232,193,90,0.5);
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+  }
+  .map-node.current { border-color: #4caf7d; box-shadow: 0 0 14px #4caf7d; }
+  .map-node.traveling-to { border-color: #e8c15a; animation: pulseNode 1.2s infinite; }
+  @keyframes pulseNode {
+    0%, 100% { box-shadow: 0 0 6px rgba(232,193,90,0.4); }
+    50% { box-shadow: 0 0 16px rgba(232,193,90,0.9); }
+  }
+  .node-label {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.62rem;
+    white-space: nowrap;
+    margin-top: 4px;
+    color: rgba(255,255,255,0.75);
+    background: rgba(0,0,0,0.4);
+    padding: 1px 5px;
+    border-radius: 6px;
+  }
+  .zone-btn .zicon { font-size: 1.4rem; }
+  .back-link {
+    background: none;
+    border: none;
+    color: var(--purple-light);
+    font-size: 0.85rem;
+    padding: 6px 0;
+    text-align: left;
+  }
+  .combat-vs {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 6px 0;
+  }
+  .combat-side { flex: 1; text-align: center; }
+  .combat-side .cicon { font-size: 2.2rem; }
+  .combat-side .cname { font-size: 0.85rem; margin: 4px 0; }
+  .combat-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .combat-actions button {
+    flex: 1;
+    padding: 12px 4px;
+    border-radius: 10px;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: bold;
+  }
+  .btn-attack { background: var(--purple); color: white; }
+  .btn-spell { background: linear-gradient(135deg, #3a7bd5, #5aa8f0); color: white; }
+  .btn-flee { background: rgba(255,255,255,0.1); color: var(--text); }
+  .combat-actions button:disabled { opacity: 0.35; }
+  .combat-log {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.6);
+    min-height: 40px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 8px;
+    padding: 8px;
+    margin-top: 10px;
+  }
+  .monster-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .monster-row.locked { opacity: 0.45; }
+  .monster-icon { font-size: 1.8rem; }
+  .monster-info { flex: 1; }
+  .monster-info .mname { font-weight: bold; font-size: 0.95rem; }
+  .monster-info .mlvl { font-size: 0.72rem; color: var(--gold); }
+  .monster-info .mstats { font-size: 0.7rem; color: rgba(255,255,255,0.55); margin-top: 2px; }
+  .monster-fight-btn {
+    background: var(--purple);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  .monster-fight-btn:disabled { opacity: 0.4; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TELA DE CRIAÇÃO DE PERSONAGEM -->
+  <div class="creation-screen" id="creationScreen">
+    <div class="subtitle">Crie seu personagem</div>
+
+    <div class="card">
+      <div class="nick-row">
+        <input id="nickInput" type="text" placeholder="Escolha seu nickname" maxlength="16">
+        <button onclick="checkNickname()">Verificar</button>
+      </div>
+      <div class="nick-status" id="nickStatus"></div>
+    </div>
+
+    <div class="card">
+      <div class="avatar-box">
+        <svg id="avatarSvg" width="140" height="180" viewBox="0 0 140 180"></svg>
+      </div>
+
+      <div class="gender-row">
+        <button class="gender-btn" id="genderF" onclick="selectGender('f')">♀ Feminino</button>
+        <button class="gender-btn" id="genderM" onclick="selectGender('m')">♂ Masculino</button>
+      </div>
+
+      <div class="preset-row" style="margin-top:16px;">
+        <button class="arrow-btn" onclick="cyclePreset(-1)">‹</button>
+        <div class="preset-label" id="presetLabel">Visual 1</div>
+        <button class="arrow-btn" onclick="cyclePreset(1)">›</button>
+      </div>
+    </div>
+
+    <button class="confirm-btn" id="confirmBtn" onclick="confirmCharacter()" disabled>Confirmar</button>
+    <div class="hint">
+      Verificação de nickname é simulada neste protótipo (sem servidor ainda).<br>
+      <a href="#" onclick="resetProgress(); return false;" style="color:#e5615a;">🔄 Resetar progresso (teste)</a>
+    </div>
+  </div>
+
+  <!-- TELA DE SELEÇÃO DE CASA -->
+  <div class="hidden creation-screen" id="houseScreen">
+    <div class="subtitle">Escolha sua casa</div>
+
+    <div class="house-grid" id="houseGrid"></div>
+
+    <button class="confirm-btn" id="confirmHouseBtn" onclick="confirmHouse()" disabled>Confirmar Casa</button>
+    <div class="hint">Cada casa dá um bônus permanente e vai definir a árvore de habilidades futura.</div>
+  </div>
+
+  <!-- APP PRINCIPAL DO JOGO -->
+  <div class="hidden" id="mainApp">
+    <div class="subtitle" id="playerTagline">Protótipo v0.1 — clicker de treino mágico</div>
+
+    <div class="top-nav">
+      <button class="nav-btn" onclick="navClick('mapa')">
+        <span class="nav-icon">🗺️</span>
+        <span class="nav-label">Mapa</span>
+      </button>
+      <button class="nav-btn" onclick="navClick('mochila')">
+        <span class="nav-icon">🎒</span>
+        <span class="nav-label">Mochila</span>
+      </button>
+      <button class="nav-btn" onclick="navClick('habilidades')">
+        <span class="nav-icon">⚔️</span>
+        <span class="nav-label">Habilidades</span>
+      </button>
+      <button class="nav-btn" onclick="navClick('social')">
+        <span class="nav-icon">👥</span>
+        <span class="nav-label">Social</span>
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="stat-row">
+        <span>Nível <b id="levelVal">1</b></span>
+        <span id="xpText">0 / 50 XP</span>
+      </div>
+      <div class="bar-outer"><div class="bar-inner" id="xpBar" style="width:0%"></div></div>
+
+      <div class="stat-row" style="margin-top:12px;">
+        <span>❤️ Vida</span>
+        <span id="hpText">30 / 30</span>
+      </div>
+      <div class="bar-outer hp-bar"><div class="bar-inner" id="hpBar" style="width:100%"></div></div>
+
+      <div class="stat-row" style="margin-top:12px;">
+        <span>Mana</span>
+        <span id="manaText">10 / 10</span>
+      </div>
+      <div class="bar-outer"><div class="bar-inner mana" id="manaBar" style="width:100%"></div></div>
+    </div>
+
+    <div class="currencies">
+      <div class="currency">
+        <div class="val" id="goldVal">0</div>
+        <div class="lbl">🪙 Moedas de Cobre</div>
+      </div>
+      <div class="currency">
+        <div class="val" id="essenceVal">0</div>
+        <div class="lbl">💎 Essência Arcana</div>
+      </div>
+    </div>
+
+    <button class="cast-btn" onclick="openMap()">🗺️ Ir para o Mapa</button>
+    <div class="log" id="log"></div>
+
+    <div class="hint">
+      Protótipo local — o progresso fica salvo neste navegador/dispositivo.<br>
+      Essência Arcana ainda não é comprável; será a moeda premium (via Pix) na versão final.<br>
+      <a href="#" onclick="resetProgress(); return false;" style="color:#e5615a;">🔄 Resetar progresso (teste)</a>
+    </div>
+  </div>
+
+  <!-- TELA DE MOCHILA -->
+  <div class="hidden creation-screen" id="mochilaScreen">
+    <button class="back-link" onclick="backToMain()">‹ Voltar</button>
+    <div class="subtitle">🎒 Mochila</div>
+    <div class="card">
+      <div class="inv-grid" id="invGrid"></div>
+    </div>
+  </div>
+
+  <!-- TELA DE MAPA -->
+  <div class="hidden creation-screen" id="mapScreen">
+    <button class="back-link" onclick="backToMain()">‹ Voltar</button>
+    <div class="subtitle">Mapa de Arcanum</div>
+
+    <div class="hint hidden" id="travelBanner"></div>
+
+    <div class="map-viewport" id="mapViewport">
+      <div class="map-canvas" id="mapCanvas">
+        <svg class="map-edges" id="mapEdges" width="1000" height="700"></svg>
+        <div id="mapNodes"></div>
+      </div>
+    </div>
+    <div class="hint">Arraste para navegar · pince com 2 dedos para zoom</div>
+
+    <div class="zone-card hidden" id="locationPanel">
+      <div class="zone-title" id="locationTitle"></div>
+      <div class="zone-desc" id="locationDesc"></div>
+      <div class="zone-actions" id="locationActions"></div>
+    </div>
+
+    <div class="zone-card hidden" id="travelConfirmPanel">
+      <div class="zone-title" id="travelConfirmTitle"></div>
+      <div class="zone-desc" id="travelConfirmDesc"></div>
+      <div class="combat-actions">
+        <button class="btn-attack" onclick="confirmTravel()">🧭 Viajar</button>
+        <button class="btn-flee" onclick="cancelTravelConfirm()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELA DE SELEÇÃO DE MONSTRO -->
+  <div class="hidden creation-screen" id="huntScreen">
+    <button class="back-link" onclick="openMap()">‹ Voltar ao mapa</button>
+    <div class="subtitle">Escolha seu alvo</div>
+    <div id="huntList"></div>
+  </div>
+
+  <!-- TELA DE SELEÇÃO DE MONSTRO -->
+  <div class="hidden creation-screen" id="huntSelectScreen">
+    <button class="back-link" onclick="openMap()">‹ Voltar ao mapa</button>
+    <div class="subtitle" id="huntSelectTitle">Escolha seu alvo</div>
+    <div id="huntMonsterList"></div>
+  </div>
+
+  <!-- TELA DE COMBATE -->
+  <div class="hidden creation-screen" id="combatScreen">
+    <button class="back-link" id="combatBackBtn" onclick="openMap()">‹ Voltar ao mapa</button>
+    <div class="card">
+      <div class="combat-vs">
+        <div class="combat-side">
+          <div class="cicon" id="playerCombatIcon">🧙</div>
+          <div class="cname">Você</div>
+          <div class="bar-outer hp-bar" style="max-width:120px;margin:0 auto;"><div class="bar-inner" id="combatPlayerHpBar" style="width:100%"></div></div>
+        </div>
+        <div style="font-size:1.3rem;">⚔️</div>
+        <div class="combat-side">
+          <div class="cicon" id="enemyIcon">👾</div>
+          <div class="cname" id="enemyName">Inimigo</div>
+          <div class="bar-outer hp-bar" style="max-width:120px;margin:0 auto;"><div class="bar-inner" id="enemyHpBar" style="width:100%"></div></div>
+        </div>
+      </div>
+
+      <div class="combat-actions">
+        <button class="btn-attack" onclick="playerAttack()">⚔️ Atacar</button>
+        <button class="btn-spell" id="spellBtn" onclick="playerCastSpell()">🔮 Feitiço (3 mana)</button>
+        <button class="btn-flee" onclick="fleeCombat()">🏃 Fugir</button>
+      </div>
+
+      <div class="combat-log" id="combatLog">O combate começou!</div>
+    </div>
+  </div>
+
+  <!-- TELA DE NPC DE MISSÃO -->
+  <div class="hidden creation-screen" id="npcScreen">
+    <button class="back-link" onclick="openMap()">‹ Voltar ao mapa</button>
+    <div class="card">
+      <div class="zone-title">📜 Mestre Aldric</div>
+      <div class="zone-desc" id="npcDialogue">Saudação, aprendiz.</div>
+      <button class="confirm-btn" id="npcActionBtn" onclick="npcAction()">Aceitar Missão</button>
+    </div>
+  </div>
+
+  <!-- TELA DE MERCADOR -->
+  <div class="hidden creation-screen" id="merchantScreen">
+    <button class="back-link" onclick="openMap()">‹ Voltar ao mapa</button>
+    <div class="card">
+      <div class="zone-title">🛒 Mercador Ithren</div>
+      <div class="zone-desc">"Boas relíquias, bom preço. Dê uma olhada."</div>
+      <div id="merchantList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- Integração básica com o Telegram Web App ---
+  let tg = window.Telegram ? window.Telegram.WebApp : null;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    document.body.style.background = tg.themeParams.bg_color || "";
+  }
+
+  // --- Estado do jogo (salvo no localStorage por enquanto) ---
+  const STORAGE_KEY = "academia_arcana_save";
+
+  const ITEMS = [
+    { id: "erva_lunar",    name: "Erva Lunar",     icon: "🌿", rarity: "comum", weight: 50 },
+    { id: "po_estelar",    name: "Pó Estelar",     icon: "✨", rarity: "comum", weight: 30 },
+    { id: "cristal_arcano",name: "Cristal Arcano", icon: "🔹", rarity: "raro",  weight: 15 },
+    { id: "pena_fenix",    name: "Pena de Fênix",  icon: "🪶", rarity: "epico", weight: 5  }
+  ];
+  const DROP_CHANCE = 0.3; // 30% de chance de achar item ao conjurar
+
+  function defaultState() {
+    return {
+      name: "",
+      characterCreated: false,
+      house: null,
+      gender: "f",
+      presetIndex: 0,
+      level: 1,
+      xp: 0,
+      xpToNext: 50,
+      mana: 10,
+      manaMax: 10,
+      hp: 30,
+      hpMax: 30,
+      attack: 4,
+      defense: 1,
+      gold: 0,
+      essence: 0,
+      inventory: {},
+      upgrades: { power: 0, mana: 0, luck: 0, regen: 0 },
+      questStage: "none",
+      questKills: 0,
+      bossCooldownUntil: 0,
+      purchasedItems: {},
+      currentLocation: "academia",
+      travelTarget: null,
+      travelArrivesAt: 0
+    };
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const loaded = raw ? JSON.parse(raw) : defaultState();
+      if (!loaded.inventory) loaded.inventory = {};
+      if (!loaded.upgrades) loaded.upgrades = { power: 0, mana: 0, luck: 0, regen: 0 };
+      if (loaded.hp === undefined) loaded.hp = 30;
+      if (loaded.hpMax === undefined) loaded.hpMax = 30;
+      if (loaded.attack === undefined) loaded.attack = 4;
+      if (loaded.defense === undefined) loaded.defense = 1;
+      if (loaded.questStage === undefined) loaded.questStage = "none";
+      if (loaded.questKills === undefined) loaded.questKills = 0;
+      if (loaded.bossCooldownUntil === undefined) loaded.bossCooldownUntil = 0;
+      if (!loaded.purchasedItems) loaded.purchasedItems = {};
+      if (!loaded.currentLocation) loaded.currentLocation = "academia";
+      if (loaded.travelTarget === undefined) loaded.travelTarget = null;
+      if (loaded.travelArrivesAt === undefined) loaded.travelArrivesAt = 0;
+      if (loaded.characterCreated === undefined) loaded.characterCreated = false;
+      if (loaded.house === undefined) loaded.house = null;
+      if (!loaded.gender) loaded.gender = "f";
+      if (loaded.presetIndex === undefined) loaded.presetIndex = 0;
+      return loaded;
+    } catch (e) {
+      return defaultState();
+    }
+  }
+
+  function rollItemDrop(luckBonus) {
+    luckBonus = luckBonus || 0;
+    if (Math.random() > (DROP_CHANCE + luckBonus)) return null;
+    const totalWeight = ITEMS.reduce((sum, it) => sum + it.weight, 0);
+    let roll = Math.random() * totalWeight;
+    for (const item of ITEMS) {
+      if (roll < item.weight) return item;
+      roll -= item.weight;
+    }
+    return ITEMS[0];
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* ignora se storage falhar */ }
+  }
+
+  let state = loadState();
+
+  function render() {
+    const houseObj = HOUSES.find(h => h.id === state.house);
+    const tagline = document.getElementById("playerTagline");
+    tagline.textContent =
+      (state.name || "Aprendiz") + " · " + (state.gender === "f" ? "Feminino" : "Masculino") +
+      (houseObj ? " · " + houseObj.icon + " " + houseObj.name : "");
+    tagline.style.color = houseObj ? houseObj.color : "";
+    document.getElementById("levelVal").textContent = state.level;
+    document.getElementById("xpText").textContent = state.xp + " / " + state.xpToNext + " XP";
+    document.getElementById("xpBar").style.width = Math.min(100, (state.xp / state.xpToNext) * 100) + "%";
+    document.getElementById("hpText").textContent = state.hp + " / " + state.hpMax;
+    document.getElementById("hpBar").style.width = (state.hp / state.hpMax) * 100 + "%";
+    document.getElementById("manaText").textContent = state.mana + " / " + state.manaMax;
+    document.getElementById("manaBar").style.width = (state.mana / state.manaMax) * 100 + "%";
+    document.getElementById("goldVal").textContent = state.gold;
+    document.getElementById("essenceVal").textContent = state.essence;
+
+    renderInventory();
+  }
+
+  function renderInventory() {
+    const grid = document.getElementById("invGrid");
+    grid.innerHTML = "";
+    ITEMS.forEach(item => {
+      const count = state.inventory[item.id] || 0;
+      const slot = document.createElement("div");
+      slot.className = "inv-slot rarity-" + item.rarity + (count === 0 ? " empty" : "");
+      slot.innerHTML =
+        '<span class="icon">' + item.icon + '</span>' +
+        '<span class="iname">' + item.name + '</span>' +
+        (count > 0 ? '<span class="count">x' + count + '</span>' : '');
+      grid.appendChild(slot);
+    });
+  }
+
+  // ---------- CRIAÇÃO DE PERSONAGEM ----------
+
+  // Lista simulada de nicknames já usados (sem servidor real ainda)
+  const RESERVED_NICKS = ["admin", "teste", "moderador", "arcaneacademy"];
+
+  const PRESETS = [
+    { label: "Visual 1", hair: "#7d4fd6", face: "#f2c9a0", hairShape: "wave" },
+    { label: "Visual 2", hair: "#e8c15a", face: "#e0a87a", hairShape: "spiky" },
+    { label: "Visual 3", hair: "#3a3a3a", face: "#f6d9b8", hairShape: "long" },
+    { label: "Visual 4", hair: "#a63b3b", face: "#c98a5c", hairShape: "bob" }
+  ];
+
+  let nickAvailable = false;
+
+  function checkNickname() {
+    const val = document.getElementById("nickInput").value.trim();
+    const statusEl = document.getElementById("nickStatus");
+
+    if (val.length < 3 || val.length > 16) {
+      statusEl.textContent = "O nickname deve ter entre 3 e 16 caracteres.";
+      statusEl.className = "nick-status bad";
+      nickAvailable = false;
+    } else if (!/^[a-zA-Z0-9_]+$/.test(val)) {
+      statusEl.textContent = "Use apenas letras, números e _ (sem espaços).";
+      statusEl.className = "nick-status bad";
+      nickAvailable = false;
+    } else if (RESERVED_NICKS.includes(val.toLowerCase())) {
+      statusEl.textContent = "Esse nickname já está em uso.";
+      statusEl.className = "nick-status bad";
+      nickAvailable = false;
+    } else {
+      statusEl.textContent = "✓ Nickname disponível (verificação local — sem servidor ainda)";
+      statusEl.className = "nick-status ok";
+      nickAvailable = true;
+      state.name = val;
+    }
+    updateConfirmButton();
+  }
+
+  function selectGender(g) {
+    state.gender = g;
+    document.getElementById("genderF").classList.toggle("active", g === "f");
+    document.getElementById("genderM").classList.toggle("active", g === "m");
+    renderAvatar();
+    updateConfirmButton();
+  }
+
+  function cyclePreset(dir) {
+    state.presetIndex = (state.presetIndex + dir + PRESETS.length) % PRESETS.length;
+    renderAvatar();
+  }
+
+  function renderAvatar() {
+    const preset = PRESETS[state.presetIndex];
+    document.getElementById("presetLabel").textContent = preset.label;
+
+    const robeColor = state.gender === "f" ? "#7d4fd6" : "#2f4d8a";
+    const robeShape = state.gender === "f"
+      ? "M35,180 L30,100 Q70,80 110,100 L105,180 Z"
+      : "M38,180 L34,100 Q70,88 106,100 L102,180 Z";
+
+    let hairPath = "";
+    if (preset.hairShape === "wave") {
+      hairPath = "M35,70 Q70,30 105,70 Q100,50 70,45 Q40,50 35,70 Z";
+    } else if (preset.hairShape === "spiky") {
+      hairPath = "M32,72 L45,35 L55,60 L70,30 L85,60 L95,35 L108,72 Z";
+    } else if (preset.hairShape === "long") {
+      hairPath = "M33,70 Q70,25 107,70 L112,150 L98,150 L95,75 L45,75 L42,150 L28,150 Z";
+    } else {
+      hairPath = "M34,72 Q70,32 106,72 Q108,90 95,95 Q70,80 45,95 Q32,90 34,72 Z";
+    }
+
+    const svg =
+      '<circle cx="70" cy="70" r="32" fill="' + preset.face + '" />' +
+      '<path d="' + robeShape + '" fill="' + robeColor + '" />' +
+      '<circle cx="58" cy="68" r="3.5" fill="#2a1a3d" />' +
+      '<circle cx="82" cy="68" r="3.5" fill="#2a1a3d" />' +
+      '<path d="M60,85 Q70,92 80,85" stroke="#5a3a1a" stroke-width="2" fill="none" />' +
+      '<path d="' + hairPath + '" fill="' + preset.hair + '" />';
+
+    document.getElementById("avatarSvg").innerHTML = svg;
+  }
+
+  const HOUSES = [
+    {
+      id: "vaelunna",
+      name: "Vaelunna",
+      icon: "🐺",
+      color: "#e8c15a",
+      desc: "Uivam sob a lua cheia, movidos por instinto, lealdade de matilha e fúria no ataque.",
+      buff: "+15% XP e Moedas por conjuração",
+      statKey: "power",
+      statValue: 0.15
+    },
+    {
+      id: "noctivia",
+      name: "Noctivia",
+      icon: "🦉",
+      color: "#4caf7d",
+      desc: "Guardiões do saber noturno, enxergam o que os outros não veem e guardam reservas profundas de magia.",
+      buff: "+10 Mana máxima e regeneração mais rápida",
+      statKey: "mana",
+      statValue: 10
+    },
+    {
+      id: "sibyra",
+      name: "Sibyra",
+      icon: "🐍",
+      color: "#c0453f",
+      desc: "Astutos e traiçoeiros, atacam apenas no instante perfeito — e a sorte nunca os abandona.",
+      buff: "+10% de chance de encontrar itens",
+      statKey: "luck",
+      statValue: 0.10
+    },
+    {
+      id: "cervanthus",
+      name: "Cervanthus",
+      icon: "🦌",
+      color: "#4a7bc7",
+      desc: "Fortes e resilientes, avançam com passos firmes e imponentes, sempre bem providos.",
+      buff: "+20% Moedas de Cobre por conjuração",
+      statKey: "gold",
+      statValue: 0.20
+    }
+  ];
+
+  function renderHouseScreen() {
+    const grid = document.getElementById("houseGrid");
+    grid.innerHTML = "";
+    HOUSES.forEach(h => {
+      const isSelected = state.house === h.id;
+      const card = document.createElement("div");
+      card.className = "house-card" + (isSelected ? " selected" : "");
+      card.style.borderColor = isSelected ? h.color : "rgba(255,255,255,0.1)";
+      card.style.background = isSelected ? h.color + "18" : "rgba(255,255,255,0.03)";
+      card.onclick = () => selectHouse(h.id);
+      card.innerHTML =
+        '<div class="house-icon">' + h.icon + '</div>' +
+        '<div class="house-info">' +
+          '<div class="hname" style="color:' + h.color + '">' + h.name + '</div>' +
+          '<div class="hdesc">' + h.desc + '</div>' +
+          '<div class="hbuff">' + h.buff + '</div>' +
+        '</div>';
+      grid.appendChild(card);
+    });
+  }
+
+  function selectHouse(id) {
+    state.house = id;
+    renderHouseScreen();
+    document.getElementById("confirmHouseBtn").disabled = false;
+  }
+
+  function confirmHouse() {
+    if (!state.house) return;
+    const h = HOUSES.find(x => x.id === state.house);
+    if (h && h.statKey === "mana") {
+      state.manaMax += h.statValue;
+      state.mana += h.statValue;
+    }
+    saveState();
+    document.getElementById("houseScreen").classList.add("hidden");
+    document.getElementById("mainApp").classList.remove("hidden");
+    render();
+  }
+
+  function houseBonusMultiplier(statKey) {
+    const h = HOUSES.find(x => x.id === state.house);
+    if (h && h.statKey === statKey) return h.statValue;
+    return 0;
+  }
+
+  function updateConfirmButton() {
+    document.getElementById("confirmBtn").disabled = !nickAvailable;
+  }
+
+  function confirmCharacter() {
+    if (!nickAvailable) return;
+    state.characterCreated = true;
+    saveState();
+    document.getElementById("creationScreen").classList.add("hidden");
+    document.getElementById("houseScreen").classList.remove("hidden");
+    renderHouseScreen();
+  }
+
+  function initScreen() {
+    if (state.characterCreated && state.house) {
+      document.getElementById("creationScreen").classList.add("hidden");
+      document.getElementById("houseScreen").classList.add("hidden");
+      document.getElementById("mainApp").classList.remove("hidden");
+    } else if (state.characterCreated && !state.house) {
+      document.getElementById("creationScreen").classList.add("hidden");
+      document.getElementById("houseScreen").classList.remove("hidden");
+      renderHouseScreen();
+    } else {
+      document.getElementById("genderF").classList.toggle("active", state.gender === "f");
+      document.getElementById("genderM").classList.toggle("active", state.gender === "m");
+      renderAvatar();
+    }
+  }
+
+  function resetProgress() {
+    if (confirm("Isso vai apagar todo o progresso salvo neste dispositivo. Continuar?")) {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+  }
+
+  function navClick(target) {
+    if (target === "mochila") {
+      hideAllScreens();
+      document.getElementById("mochilaScreen").classList.remove("hidden");
+      renderInventory();
+      return;
+    }
+    if (target === "mapa") {
+      openMap();
+      return;
+    }
+    const labels = { habilidades: "Habilidades", social: "Social" };
+    log("🔒 " + labels[target] + " ainda não disponível neste protótipo.");
+  }
+
+  function log(msg) {
+    document.getElementById("log").textContent = msg;
+  }
+
+  function grantVictoryRewards(baseXp, baseGold) {
+    const powerMult = 1 + (state.upgrades.power || 0) * 0.2 + houseBonusMultiplier("power");
+    const goldMult = 1 + houseBonusMultiplier("gold");
+    const xpGain = Math.round(baseXp * powerMult);
+    const goldGain = Math.round(baseGold * powerMult * goldMult);
+    state.xp += xpGain;
+    state.gold += goldGain;
+
+    let msg = "Vitória! +" + xpGain + " XP, +" + goldGain + " moedas";
+
+    const luckBonus = (state.upgrades.luck || 0) * 0.05 + houseBonusMultiplier("luck");
+    const droppedItem = rollItemDrop(luckBonus);
+    if (droppedItem) {
+      state.inventory[droppedItem.id] = (state.inventory[droppedItem.id] || 0) + 1;
+      msg += " — encontrou " + droppedItem.icon + " " + droppedItem.name + "!";
+    }
+
+    if (state.xp >= state.xpToNext) {
+      state.xp -= state.xpToNext;
+      state.level += 1;
+      state.xpToNext = Math.round(state.xpToNext * 1.25);
+      state.manaMax += 2;
+      state.mana = state.manaMax;
+      state.hpMax += 5;
+      state.hp = state.hpMax;
+      state.attack += 1;
+      state.essence += 1; // recompensa de nível: essência arcana
+      msg += " — 🎉 Subiu para o nível " + state.level + "! (+1 Essência Arcana)";
+    }
+
+    log(msg);
+    saveState();
+    render();
+
+    if (tg && tg.HapticFeedback) {
+      tg.HapticFeedback.impactOccurred("light");
+    }
+    return msg;
+  }
+
+  // ---------- NAVEGAÇÃO ENTRE TELAS ----------
+
+  function hideAllScreens() {
+    ["mainApp", "mapScreen", "combatScreen", "npcScreen", "merchantScreen", "mochilaScreen", "huntSelectScreen"].forEach(id => {
+      document.getElementById(id).classList.add("hidden");
+    });
+  }
+
+  function backToMain() {
+    hideAllScreens();
+    document.getElementById("mainApp").classList.remove("hidden");
+    render();
+  }
+
+  // ---------- MAPA INTERATIVO ----------
+
+  const LOCATIONS = [
+    { id: "academia", name: "Academia", icon: "🏛️", x: 140, y: 480, desc: "O lar seguro dos aprendizes. Aqui você pode descansar.", connections: ["jardins", "vila"], implemented: true },
+    { id: "jardins", name: "Jardins da Academia", icon: "🌿", x: 420, y: 280, desc: "A primeira área de treino. Criaturas fracas rondam por aqui.", connections: ["academia", "floresta", "lago"], implemented: true },
+    { id: "floresta", name: "Floresta Sombria", icon: "🌲", x: 680, y: 470, desc: "Densa e perigosa — poucos aprendizes se arriscam sozinhos.", connections: ["jardins", "cavernas", "ruinas", "vila", "lago"], implemented: false },
+    { id: "cavernas", name: "Cavernas Ecoantes", icon: "🕳️", x: 900, y: 220, desc: "Ecos antigos ressoam nas profundezas da rocha.", connections: ["floresta", "ruinas"], implemented: false },
+    { id: "lago", name: "Lago Sereno", icon: "🌊", x: 460, y: 640, desc: "Águas calmas onde dizem viver espíritos antigos.", connections: ["jardins", "floresta", "vila"], implemented: false },
+    { id: "vila", name: "Vila dos Mercadores", icon: "🏘️", x: 260, y: 660, desc: "Um pequeno povoado movimentado por comerciantes viajantes.", connections: ["academia", "floresta", "lago"], implemented: false },
+    { id: "ruinas", name: "Ruínas Antigas", icon: "🏚️", x: 900, y: 640, desc: "Restos de uma civilização mágica esquecida pelo tempo.", connections: ["floresta", "cavernas"], implemented: false }
+  ];
+
+  const TRAVEL_MS = 5 * 1000; // TESTE: 5 segundos (versão final: 5 * 60 * 1000 = 5 minutos)
+
+  function formatDuration(ms) {
+    const totalSec = Math.ceil(ms / 1000);
+    if (totalSec < 60) return totalSec + " segundo" + (totalSec === 1 ? "" : "s");
+    const min = Math.round(totalSec / 60);
+    return min + " minuto" + (min === 1 ? "" : "s");
+  }
+
+  let mapInteractionReady = false;
+  let mapTransform = { x: 40, y: 60, scale: 0.7 };
+
+  function locById(id) {
+    return LOCATIONS.find(l => l.id === id);
+  }
+
+  function openMap() {
+    hideAllScreens();
+    document.getElementById("mapScreen").classList.remove("hidden");
+    document.getElementById("travelConfirmPanel").classList.add("hidden");
+    pendingTravelTarget = null;
+    checkTravelArrival();
+    renderMapNodes();
+    applyMapTransform();
+    initMapInteraction();
+    updateTravelBanner();
+    if (!state.travelTarget) {
+      renderLocationPanel(state.currentLocation);
+    } else {
+      document.getElementById("locationPanel").classList.add("hidden");
+    }
+  }
+
+  function renderMapNodes() {
+    const nodesWrap = document.getElementById("mapNodes");
+    const edgesSvg = document.getElementById("mapEdges");
+    nodesWrap.innerHTML = "";
+    edgesSvg.innerHTML = "";
+
+    const drawn = new Set();
+    LOCATIONS.forEach(loc => {
+      loc.connections.forEach(connId => {
+        const key = [loc.id, connId].sort().join("-");
+        if (drawn.has(key)) return;
+        drawn.add(key);
+        const other = locById(connId);
+        if (!other) return;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", loc.x);
+        line.setAttribute("y1", loc.y);
+        line.setAttribute("x2", other.x);
+        line.setAttribute("y2", other.y);
+        line.setAttribute("stroke", "rgba(232,193,90,0.35)");
+        line.setAttribute("stroke-width", "3");
+        line.setAttribute("stroke-dasharray", "6,6");
+        edgesSvg.appendChild(line);
+      });
+    });
+
+    LOCATIONS.forEach(loc => {
+      const node = document.createElement("div");
+      let cls = "map-node";
+      if (loc.id === state.currentLocation) cls += " current";
+      if (state.travelTarget === loc.id) cls += " traveling-to";
+      node.className = cls;
+      node.style.left = loc.x + "px";
+      node.style.top = loc.y + "px";
+      node.dataset.id = loc.id;
+      node.innerHTML = loc.icon + '<div class="node-label">' + loc.name + '</div>';
+      nodesWrap.appendChild(node);
+    });
+  }
+
+  function applyMapTransform() {
+    document.getElementById("mapCanvas").style.transform =
+      "translate(" + mapTransform.x + "px," + mapTransform.y + "px) scale(" + mapTransform.scale + ")";
+  }
+
+  function initMapInteraction() {
+    if (mapInteractionReady) return;
+    mapInteractionReady = true;
+
+    const viewport = document.getElementById("mapViewport");
+    const pointers = new Map();
+    let dragDistance = 0;
+    let tapTarget = null;
+    let panStart = null;
+    let pinchStart = null;
+
+    function dist(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    viewport.addEventListener("pointerdown", (e) => {
+      viewport.setPointerCapture(e.pointerId);
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      dragDistance = 0;
+      tapTarget = e.target.closest(".map-node");
+
+      if (pointers.size === 1) {
+        panStart = { x: e.clientX, y: e.clientY, tx: mapTransform.x, ty: mapTransform.y };
+      } else if (pointers.size === 2) {
+        const pts = Array.from(pointers.values());
+        const rect = viewport.getBoundingClientRect();
+        pinchStart = {
+          dist: dist(pts[0], pts[1]),
+          scale: mapTransform.scale,
+          center: { x: (pts[0].x + pts[1].x) / 2 - rect.left, y: (pts[0].y + pts[1].y) / 2 - rect.top },
+          tx: mapTransform.x,
+          ty: mapTransform.y
+        };
+      }
+    });
+
+    viewport.addEventListener("pointermove", (e) => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (pointers.size === 1 && panStart) {
+        const dx = e.clientX - panStart.x;
+        const dy = e.clientY - panStart.y;
+        dragDistance = Math.hypot(dx, dy);
+        mapTransform.x = panStart.tx + dx;
+        mapTransform.y = panStart.ty + dy;
+        applyMapTransform();
+      } else if (pointers.size === 2 && pinchStart) {
+        const pts = Array.from(pointers.values());
+        const newDist = dist(pts[0], pts[1]);
+        let newScale = pinchStart.scale * (newDist / pinchStart.dist);
+        newScale = Math.max(0.4, Math.min(2.5, newScale));
+        const deltaScale = newScale / pinchStart.scale;
+        mapTransform.x = pinchStart.center.x - (pinchStart.center.x - pinchStart.tx) * deltaScale;
+        mapTransform.y = pinchStart.center.y - (pinchStart.center.y - pinchStart.ty) * deltaScale;
+        mapTransform.scale = newScale;
+        dragDistance = 999; // pinching nunca conta como tap
+        applyMapTransform();
+      }
+    });
+
+    function endPointer(e) {
+      const wasSingle = pointers.size === 1;
+      pointers.delete(e.pointerId);
+      panStart = null;
+      pinchStart = null;
+
+      if (pointers.size === 1) {
+        const remaining = Array.from(pointers.entries())[0];
+        panStart = { x: remaining[1].x, y: remaining[1].y, tx: mapTransform.x, ty: mapTransform.y };
+      }
+
+      if (wasSingle && dragDistance < 8 && tapTarget) {
+        handleNodeTap(tapTarget.dataset.id);
+      }
+      tapTarget = null;
+    }
+
+    viewport.addEventListener("pointerup", endPointer);
+    viewport.addEventListener("pointercancel", endPointer);
+  }
+
+  let pendingTravelTarget = null;
+
+  function handleNodeTap(id) {
+    const target = locById(id);
+    if (!target) return;
+
+    if (id === state.currentLocation) {
+      if (!state.travelTarget) {
+        document.getElementById("travelConfirmPanel").classList.add("hidden");
+        renderLocationPanel(id);
+      }
+      return;
+    }
+
+    if (state.travelTarget) {
+      log("Você já está viajando para " + locById(state.travelTarget).name + ".");
+      return;
+    }
+
+    const current = locById(state.currentLocation);
+    if (!current.connections.includes(id)) {
+      log("Só é possível viajar para locais conectados a " + current.name + ".");
+      return;
+    }
+
+    pendingTravelTarget = id;
+    document.getElementById("locationPanel").classList.add("hidden");
+    document.getElementById("travelConfirmTitle").textContent = target.icon + " Viajar para " + target.name + "?";
+    document.getElementById("travelConfirmDesc").textContent =
+      "A viagem vai levar " + formatDuration(TRAVEL_MS) + ".";
+    document.getElementById("travelConfirmPanel").classList.remove("hidden");
+  }
+
+  function confirmTravel() {
+    if (!pendingTravelTarget) return;
+    state.travelTarget = pendingTravelTarget;
+    state.travelArrivesAt = Date.now() + TRAVEL_MS;
+    pendingTravelTarget = null;
+    saveState();
+    document.getElementById("travelConfirmPanel").classList.add("hidden");
+    renderMapNodes();
+    updateTravelBanner();
+  }
+
+  function cancelTravelConfirm() {
+    pendingTravelTarget = null;
+    document.getElementById("travelConfirmPanel").classList.add("hidden");
+  }
+
+  function checkTravelArrival() {
+    if (state.travelTarget && Date.now() >= state.travelArrivesAt) {
+      const arrivedName = locById(state.travelTarget).name;
+      state.currentLocation = state.travelTarget;
+      state.travelTarget = null;
+      state.travelArrivesAt = 0;
+      saveState();
+      log("Você chegou em " + arrivedName + "!");
+    }
+  }
+
+  function updateTravelBanner() {
+    const banner = document.getElementById("travelBanner");
+    if (!state.travelTarget) {
+      banner.classList.add("hidden");
+      return;
+    }
+    const remaining = Math.max(0, state.travelArrivesAt - Date.now());
+    const mm = String(Math.floor(remaining / 60000)).padStart(2, "0");
+    const ss = String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0");
+    banner.classList.remove("hidden");
+    banner.textContent = "🧭 Viajando para " + locById(state.travelTarget).name + "... chega em " + mm + ":" + ss;
+  }
+
+  function renderLocationPanel(id) {
+    const loc = locById(id);
+    const panel = document.getElementById("locationPanel");
+    panel.classList.remove("hidden");
+    document.getElementById("locationTitle").textContent = loc.icon + " " + loc.name;
+    document.getElementById("locationDesc").textContent = loc.desc;
+    const actions = document.getElementById("locationActions");
+
+    if (id === "academia") {
+      actions.innerHTML = '<button class="zone-btn" style="grid-column:span 2;" onclick="restAtAcademy()"><span class="zicon">🛏️</span>Descansar (recupera HP/Mana)</button>';
+      return;
+    }
+
+    if (!loc.implemented) {
+      actions.innerHTML = '<div class="hint" style="grid-column:span 2;">🚧 Esta área ainda está em construção. Volte em breve!</div>';
+      return;
+    }
+
+    const remaining = state.bossCooldownUntil - Date.now();
+    const bossLabel = remaining > 0
+      ? '<span class="zicon">⏳</span>Chefe (' + Math.ceil(remaining / 60000) + 'min)'
+      : '<span class="zicon">👹</span>Chefe';
+    const bossDisabled = remaining > 0 ? "disabled" : "";
+
+    actions.innerHTML =
+      '<button class="zone-btn" onclick="openHuntSelect(\'' + id + '\')"><span class="zicon">🗡️</span>Caçar</button>' +
+      '<button class="zone-btn" id="bossBtn" ' + bossDisabled + ' onclick="startBoss()">' + bossLabel + '</button>' +
+      '<button class="zone-btn" onclick="openNpc()"><span class="zicon">📜</span>NPC de Missão</button>' +
+      '<button class="zone-btn" onclick="openMerchant()"><span class="zicon">🛒</span>Mercador</button>';
+  }
+
+  function restAtAcademy() {
+    state.hp = state.hpMax;
+    state.mana = state.manaMax;
+    saveState();
+    log("Você descansou na Academia. HP e Mana totalmente recuperados.");
+  }
+
+  // ---------- INIMIGOS ----------
+
+  const LOCATION_MONSTERS = {
+    jardins: [
+      { id: "rato_arcano", name: "Rato Arcano", icon: "🐀", level: 1, hp: 14, attack: 3, xp: 8, gold: 3, requiredLevel: 1 },
+      { id: "corvo_selvagem", name: "Corvo Selvagem", icon: "🐦", level: 2, hp: 20, attack: 4, xp: 12, gold: 5, requiredLevel: 1 },
+      { id: "aranha_sombria", name: "Aranha Sombria", icon: "🕷️", level: 3, hp: 28, attack: 5, xp: 18, gold: 8, requiredLevel: 3 }
+    ]
+  };
+
+  const BOSS = { name: "Corvo Ancestral", icon: "🐦‍⬛", hp: 60, attack: 7, xp: 40, gold: 25, cooldownMs: 20 * 60 * 1000 };
+
+  let combat = null; // { enemy, enemyHp, isBoss }
+  let huntLocationId = null;
+
+  function openHuntSelect(locationId) {
+    huntLocationId = locationId;
+    hideAllScreens();
+    document.getElementById("huntSelectScreen").classList.remove("hidden");
+    renderHuntSelect();
+  }
+
+  function renderHuntSelect() {
+    const loc = locById(huntLocationId);
+    document.getElementById("huntSelectTitle").textContent = loc.icon + " Monstros — " + loc.name;
+    const list = document.getElementById("huntMonsterList");
+    list.innerHTML = "";
+    const monsters = LOCATION_MONSTERS[huntLocationId] || [];
+
+    monsters.forEach(m => {
+      const locked = state.level < m.requiredLevel;
+      const card = document.createElement("div");
+      card.className = "monster-card" + (locked ? " locked" : "");
+      card.innerHTML =
+        '<div class="monster-icon">' + m.icon + '</div>' +
+        '<div class="monster-info">' +
+          '<span class="mname">' + m.name + '</span><span class="mlevel">Nv. ' + m.level + '</span>' +
+          '<div class="mstats">❤️ ' + m.hp + ' · ⚔️ ' + m.attack + ' · 🎁 ' + m.xp + ' XP / ' + m.gold + ' moedas</div>' +
+        '</div>' +
+        (locked
+          ? '<button class="monster-fight-btn" disabled>🔒 Nv. ' + m.requiredLevel + '</button>'
+          : '<button class="monster-fight-btn" onclick="selectMonster(\'' + m.id + '\')">Enfrentar</button>');
+      list.appendChild(card);
+    });
+  }
+
+  function selectMonster(monsterId) {
+    const monsters = LOCATION_MONSTERS[huntLocationId] || [];
+    const m = monsters.find(x => x.id === monsterId);
+    if (!m || state.level < m.requiredLevel) return;
+    beginCombat(m, false);
+  }
+
+  function startBoss() {
+    if (state.bossCooldownUntil > Date.now()) return;
+    beginCombat(BOSS, true);
+  }
+
+  function beginCombat(def, isBoss) {
+    combat = {
+
+      name: def.name,
+      icon: def.icon,
+      hpMax: def.hp,
+      hp: def.hp,
+      attack: def.attack,
+      xp: def.xp,
+      gold: def.gold,
+      isBoss: isBoss
+    };
+    hideAllScreens();
+    document.getElementById("combatScreen").classList.remove("hidden");
+    document.getElementById("enemyName").textContent = combat.name;
+    document.getElementById("enemyIcon").textContent = combat.icon;
+    document.getElementById("combatBackBtn").classList.remove("hidden");
+    renderCombat();
+    combatLog("Um " + combat.name + " apareceu!");
+  }
+
+  function renderCombat() {
+    document.getElementById("combatPlayerHpBar").style.width = Math.max(0, (state.hp / state.hpMax) * 100) + "%";
+    document.getElementById("enemyHpBar").style.width = Math.max(0, (combat.hp / combat.hpMax) * 100) + "%";
+    document.getElementById("spellBtn").disabled = state.mana < 3;
+  }
+
+  function combatLog(msg) {
+    document.getElementById("combatLog").textContent = msg;
+  }
+
+  function playerAttack() {
+    if (!combat) return;
+    const dmg = Math.max(1, state.attack + Math.floor(Math.random() * 3) - 1);
+    combat.hp -= dmg;
+    let msg = "Você causou " + dmg + " de dano.";
+
+    if (combat.hp <= 0) {
+      winCombat(msg);
+      return;
+    }
+    msg += enemyTurn();
+    renderCombat();
+    combatLog(msg);
+    saveState();
+  }
+
+  function playerCastSpell() {
+    if (!combat || state.mana < 3) return;
+    state.mana -= 3;
+    const dmg = Math.max(2, Math.round((state.attack + 4) * 1.4));
+    combat.hp -= dmg;
+    let msg = "🔮 Feitiço causou " + dmg + " de dano!";
+
+    if (combat.hp <= 0) {
+      winCombat(msg);
+      return;
+    }
+    msg += enemyTurn();
+    renderCombat();
+    combatLog(msg);
+    saveState();
+  }
+
+  function enemyTurn() {
+    const dmg = Math.max(1, combat.attack - state.defense + Math.floor(Math.random() * 2));
+    state.hp -= dmg;
+    if (state.hp <= 0) {
+      state.hp = 0;
+      loseCombat();
+      return "";
+    }
+    return " " + combat.name + " revidou com " + dmg + " de dano.";
+  }
+
+  function winCombat(prefixMsg) {
+    const rewardMsg = grantVictoryRewards(combat.xp, combat.gold);
+
+    if (combat.isBoss) {
+      state.bossCooldownUntil = Date.now() + BOSS.cooldownMs;
+    }
+    if (state.questStage === "hunting" && !combat.isBoss) {
+      state.questKills += 1;
+      if (state.questKills >= 3) state.questStage = "ready";
+    }
+
+    saveState();
+    combat = null;
+    hideAllScreens();
+    document.getElementById("mainApp").classList.remove("hidden");
+    render();
+    log(prefixMsg + " " + rewardMsg);
+  }
+
+  function loseCombat() {
+    combatLog("Você foi derrotado... recuando para a Academia.");
+    combat = null;
+    setTimeout(() => {
+      state.hp = Math.max(1, Math.round(state.hpMax * 0.3));
+      saveState();
+      hideAllScreens();
+      document.getElementById("mainApp").classList.remove("hidden");
+      render();
+      log("Você recuou para curar os ferimentos.");
+    }, 1500);
+  }
+
+  function fleeCombat() {
+    combat = null;
+    backToMain();
+    log("Você fugiu do combate.");
+  }
+
+  // ---------- NPC DE MISSÃO ----------
+
+  function openNpc() {
+    hideAllScreens();
+    document.getElementById("npcScreen").classList.remove("hidden");
+    renderNpc();
+  }
+
+  function renderNpc() {
+    const dialogue = document.getElementById("npcDialogue");
+    const btn = document.getElementById("npcActionBtn");
+
+    if (state.questStage === "none") {
+      dialogue.textContent = 'Aprendiz, os Jardins estão infestados de Ratos Arcanos. Derrote 3 deles e eu te recompenso bem.';
+      btn.textContent = "Aceitar Missão";
+      btn.disabled = false;
+      btn.onclick = () => { state.questStage = "hunting"; state.questKills = 0; saveState(); renderNpc(); };
+    } else if (state.questStage === "hunting") {
+      dialogue.textContent = "Progresso: " + state.questKills + " / 3 Ratos Arcanos derrotados. Volte quando terminar.";
+      btn.textContent = "Voltar para caçar";
+      btn.disabled = false;
+      btn.onclick = () => openMap();
+    } else if (state.questStage === "ready") {
+      dialogue.textContent = "Excelente trabalho! Aqui está sua recompensa.";
+      btn.textContent = "Entregar Missão";
+      btn.disabled = false;
+      btn.onclick = () => {
+        state.gold += 30;
+        state.essence += 2;
+        state.xp += 25;
+        state.questStage = "done";
+        saveState();
+        log("Missão entregue! +30 moedas, +2 Essência, +25 XP");
+        render();
+        renderNpc();
+      };
+    } else {
+      dialogue.textContent = "Obrigado novamente pela ajuda, aprendiz. Volte sempre que precisar.";
+      btn.textContent = "Sem missões no momento";
+      btn.disabled = true;
+    }
+  }
+
+  // ---------- MERCADOR ----------
+
+  const SHOP_ITEMS = [
+    { id: "pocao_mana", name: "Poção de Mana", icon: "🧪", desc: "Restaura 5 de mana instantaneamente", cost: 8, currency: "gold" },
+    { id: "pocao_vida", name: "Poção de Vida", icon: "❤️‍🩹", desc: "Restaura 10 de HP instantaneamente", cost: 10, currency: "gold" },
+    { id: "amuleto_forca", name: "Amuleto da Força", icon: "🔱", desc: "+2 de Ataque permanente", cost: 5, currency: "essence" }
+  ];
+
+  function openMerchant() {
+    hideAllScreens();
+    document.getElementById("merchantScreen").classList.remove("hidden");
+    renderMerchant();
+  }
+
+  function renderMerchant() {
+    const list = document.getElementById("merchantList");
+    list.innerHTML = "";
+    SHOP_ITEMS.forEach(item => {
+      const alreadyBought = item.id === "amuleto_forca" && state.purchasedItems[item.id];
+      const wallet = item.currency === "gold" ? state.gold : state.essence;
+      const canAfford = wallet >= item.cost && !alreadyBought;
+      const costIcon = item.currency === "gold" ? "🪙" : "💎";
+
+      const row = document.createElement("div");
+      row.className = "upgrade-row";
+      row.innerHTML =
+        '<span class="upgrade-icon">' + item.icon + '</span>' +
+        '<div class="upgrade-info">' +
+          '<div class="uname">' + item.name + '</div>' +
+          '<div class="udesc">' + item.desc + '</div>' +
+        '</div>' +
+        '<button class="upgrade-buy' + (item.currency === "essence" ? " essence-cost" : "") + '" ' +
+          (canAfford ? "" : "disabled") + ' onclick="buyItem(\'' + item.id + '\')">' +
+          (alreadyBought ? "Adquirido" : costIcon + " " + item.cost) +
+        '</button>';
+      list.appendChild(row);
+    });
+  }
+
+  function buyItem(id) {
+    const item = SHOP_ITEMS.find(i => i.id === id);
+    if (!item) return;
+    const wallet = item.currency === "gold" ? "gold" : "essence";
+    if (state[wallet] < item.cost) return;
+
+    if (id === "pocao_mana") {
+      state.mana = Math.min(state.manaMax, state.mana + 5);
+    } else if (id === "pocao_vida") {
+      state.hp = Math.min(state.hpMax, state.hp + 10);
+    } else if (id === "amuleto_forca") {
+      if (state.purchasedItems[id]) return;
+      state.attack += 2;
+      state.purchasedItems[id] = true;
+    }
+
+    state[wallet] -= item.cost;
+    saveState();
+    render();
+    renderMerchant();
+    log("Comprou: " + item.name);
+  }
+
+  // Regeneração de mana — intervalo dinâmico (afetado pelo upgrade "regen")
+  const BASE_REGEN_MS = 10000;
+  const MIN_REGEN_MS = 3000;
+  let regenAccumulator = 0;
+
+  setInterval(() => {
+    regenAccumulator += 1000;
+    const regenLevel = state.upgrades.regen || 0;
+    const houseRegenBonus = state.house === "noctivia" ? 2000 : 0;
+    const currentInterval = Math.max(MIN_REGEN_MS, BASE_REGEN_MS - regenLevel * 1000 - houseRegenBonus);
+    if (regenAccumulator >= currentInterval) {
+      regenAccumulator = 0;
+      if (state.mana < state.manaMax) {
+        state.mana += 1;
+        saveState();
+        render();
+      }
+    }
+
+    // Viagem no mapa
+    if (state.travelTarget) {
+      const arrivedNow = Date.now() >= state.travelArrivesAt;
+      checkTravelArrival();
+      if (!document.getElementById("mapScreen").classList.contains("hidden")) {
+        if (arrivedNow) {
+          renderMapNodes();
+          renderLocationPanel(state.currentLocation);
+        }
+        updateTravelBanner();
+      }
+    }
+  }, 1000);
+
+  initScreen();
+  if (state.characterCreated && state.house) render();
+</script>
+</body>
+</html>
